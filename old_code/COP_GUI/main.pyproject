@@ -1,0 +1,3 @@
+{
+    "files": ["mainwindow.ui","mainwindow.py","micWorkaround.ui","custom_widgets/mic_plot.ui","custom_widgets/mic_plot.py"]
+}
