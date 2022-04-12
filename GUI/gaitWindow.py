@@ -4,6 +4,11 @@ import cv2
 
 
 class Ui_gaitUI(object):
+    def __init__(self,userId,sessionId,sessionTime):
+        self.userId = userId
+        self.sessionId = sessionId
+        self.sessionTime = sessionTime
+        
     def setupUi(self, gaitUI):
         gaitUI.setObjectName("gaitUI")
         gaitUI.resize(800, 600)

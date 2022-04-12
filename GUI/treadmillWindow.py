@@ -1,9 +1,15 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import *
 import cv2
-
-
+import os
 class Ui_treadmillUI(object):
+    def __init__(self,userId,sessionId,sessionTime):
+        self.userId = userId
+        self.sessionId = sessionId
+        self.sessionTime = sessionTime
+        self.PATH = f"/{str(userId)}/{str(sessionId)}/{str(sessionTime)}"
+        self.RGBPATH = os.path.join(self.PATH,'/treadmill/RGB')
+
     def setupUi(self, treadmillUi):
         self.centralwidget = QtWidgets.QWidget(treadmillUi)
         treadmillUi.setObjectName("treadmillUi")
@@ -23,11 +29,14 @@ class Ui_treadmillUI(object):
         self.record_btn.setGeometry(QtCore.QRect(240, 460, 160, 81))
         self.record_btn.setAutoDefault(False)
         self.record_btn.setObjectName("record_btn")
+        self.record_btn.clicked.connect(self.record)
         
         self.stop_btn = QtWidgets.QPushButton(treadmillUi)
         self.stop_btn.setGeometry(QtCore.QRect(420, 460, 160, 81))
         self.stop_btn.setAutoDefault(False)
         self.stop_btn.setObjectName("stop_btn")
+        self.stop_btn.setEnabled(False)
+        self.stop_btn.clicked.connect(self.stopRecording)
         
         self.reset_btn = QtWidgets.QPushButton(treadmillUi)
         self.reset_btn.setGeometry(QtCore.QRect(600, 460, 160, 81))
@@ -54,15 +63,29 @@ class Ui_treadmillUI(object):
         self.cam_view.setPixmap(QPixmap.fromImage(Image))
 
     def connect2Cam(self):
+        self.connect_btn.setEnabled(False)
         self.Worker1 = cameraThread()
         self.Worker1.start()
         self.Worker1.ImageUpdate.connect(self.ImageUpdateSlot)
 
     def record(self):
-        pass
+        
+        self.record_btn.setEnabled(False)
+        self.stop_btn.setEnabled(True)
+        self.connect_btn.setEnabled(False)
 
-    def stop(self):
-        pass
+        self.record_btn.setStyleSheet("background-color:green")
+        self.Worker1.record = True
+ 
+
+    def stopRecording(self):
+        
+        self.record_btn.setEnabled(True)
+        self.stop_btn.setEnabled(False)
+        self.connect_btn.setEnabled(True)
+
+        self.record_btn.setStyleSheet("background-color:light gray")
+        self.Worker1.stop()
 
     def reset(self):
         pass
@@ -72,19 +95,30 @@ class cameraThread(QtCore.QThread):
     
     def run(self):
         self.ThreadActive = True
-        Capture = cv2.VideoCapture(0)
+        self.Capture = cv2.VideoCapture(0)
+        self.record = False
+        fourcc = cv2.VideoWriter_fourcc('m','p','4','v')
+        videoWriter = cv2.VideoWriter('output.mp4', fourcc, 60.0, (int(self.Capture.get(3)),int(self.Capture.get(4))))
+        
         while self.ThreadActive:
-            ret, frame = Capture.read()
+            ret, frame = self.Capture.read()
             if ret:
                 Image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                if self.record:
+                    videoWriter.write(frame)
                 FlippedImage = cv2.flip(Image, 1)
                 ConvertToQtFormat = QImage(FlippedImage.data, FlippedImage.shape[1], FlippedImage.shape[0], QImage.Format_RGB888)
                 Pic = ConvertToQtFormat.scaled(640, 480, QtCore.Qt.KeepAspectRatio)
                 self.ImageUpdate.emit(Pic)
+        
+        self.Capture.release()
+        videoWriter.release()
+        
+        
+
     
     def stop(self):
         self.ThreadActive = False
-        self.quit()
 
 if __name__ == "__main__":
     import sys
