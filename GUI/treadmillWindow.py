@@ -7,8 +7,9 @@ class Ui_treadmillUI(object):
         self.userId = userId
         self.sessionId = sessionId
         self.sessionTime = sessionTime
-        self.PATH = f"/{str(userId)}/{str(sessionId)}/{str(sessionTime)}"
-        self.RGBPATH = os.path.join(self.PATH,'/treadmill/RGB')
+        # self.pathString = f"/{str(userId)}/{str(sessionId)}/{str(sessionTime)}" 
+        # self.PATH = 
+        # self.RGBPATH = os.path.join(self.PATH,'/treadmill/RGB')
 
     def setupUi(self, treadmillUi):
         self.centralwidget = QtWidgets.QWidget(treadmillUi)
