@@ -1,9 +1,12 @@
+from pathlib import Path
 from PyQt5 import QtCore, QtGui, QtWidgets
 from matplotlib import widgets
 from gaitWindow import Ui_gaitUI
 from treadmillWindow import Ui_treadmillUI
 from twoBackGameWindow import Ui_2BackGameWindow
 from VRGameWindow import Ui_VRGameWindow
+from baselineReadingWindow import Ui_BaselineReadingWindow
+
 import config
 
 import os
@@ -70,9 +73,7 @@ class Ui_MainWindow(object):
         self.w = QtWidgets.QMainWindow()
         self.ui = Ui_IndexWindow(userID,sessionID,radio1_value)
         self.ui.setupUi(self.w)
-        # self.ui.userId__Value_Label.setText(userID)
-        # self.ui.sessionId__Value_Label.setText(sessionID)
-        # self.ui.radio__Value_Label.setText(radio1_value)
+        
         
         self.ui.statusbar.showMessage(f"User ID:{userID}\t\t\t\t\t Session ID:{sessionID}\t\t\t\t\t Time:{radio1_value}")
         widget.addWidget(self.w)
@@ -120,6 +121,11 @@ class Ui_IndexWindow(object):
         self.TreadmillButton.setGeometry(QtCore.QRect(380, 250, 161, 81))
         self.TreadmillButton.setObjectName("TreadMillButton")
         self.TreadmillButton.clicked.connect(self.treadmillWindowFunction)
+
+        self.BaselineButton = QtWidgets.QPushButton(self.centralwidget)
+        self.BaselineButton.setGeometry(QtCore.QRect(270, 20, 161, 81))
+        self.BaselineButton.setObjectName("BaselineButton")
+        self.BaselineButton.clicked.connect(self.BaselineReadingWindowFunction)
         
         self.LogOutButton = QtWidgets.QPushButton(self.centralwidget)
         self.LogOutButton.setGeometry(QtCore.QRect(260, 380, 161, 81))
@@ -143,11 +149,13 @@ class Ui_IndexWindow(object):
         self.VRGameButton.setText(_translate("TwoBackButton", "VR Game"))
         self.TreadmillButton.setText(_translate("TwoBackButton", "Treadmill"))
         self.LogOutButton.setText(_translate("TwoBackButton", "Log Out"))
+        self.BaselineButton.setText(_translate("TwoBackButton", "Baseline Reading"))
 
     def gaitWindowFunction(self):
         self.w = QtWidgets.QMainWindow()
-        self.ui = Ui_gaitUI() 
+        self.ui = Ui_gaitUI(self.userId,self.sessionId,self.sessionTime) 
         self.ui.setupUi(self.w)
+        self.ui.PATH = self.checkDir('GAIT')
         self.ui.statusbar.showMessage(f"User ID:{self.userId}\t\t\t\t\t Session ID:{self.sessionId}\t\t\t\t\t Time:{self.sessionTime}")
         self.w.show()
 
@@ -182,6 +190,14 @@ class Ui_IndexWindow(object):
             os.makedirs(path)
         
         return path
+
+    def BaselineReadingWindowFunction(self):
+        self.w = QtWidgets.QMainWindow()
+        self.ui = Ui_BaselineReadingWindow(self.userId,self.sessionId,self.sessionTime)
+        self.ui.PATH = self.checkDir('BaseLine')
+        self.ui.setupUi(self.w)
+        self.ui.statusbar.showMessage(f"User ID:{self.userId}\t\t\t\t\t Session ID:{self.sessionId}\t\t\t\t\t Time:{self.sessionTime}")
+        self.w.show()
 
     def end_test(self):
         widget.resize(400,500)
