@@ -1,12 +1,12 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from matplotlib import widgets
 from gaitWindow import Ui_gaitUI
-# from IndexWindow import Ui_IndexWindow
-
-from gaitWindow import Ui_gaitUI
 from treadmillWindow import Ui_treadmillUI
 from twoBackGameWindow import Ui_2BackGameWindow
 from VRGameWindow import Ui_VRGameWindow
+import config
+
+import os
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -126,42 +126,7 @@ class Ui_IndexWindow(object):
         self.LogOutButton.setObjectName("LogOutButton")
         self.LogOutButton.clicked.connect(self.end_test)
         self.LogOutButton.clicked.connect(TwoBackButton.close)
-        '''
-        self.userId__Input_Label = QtWidgets.QLabel(self.centralwidget)
-        self.userId__Input_Label.setGeometry(QtCore.QRect(10, 10, 100, 30))
-        font = QtGui.QFont()
-        font.setPointSize(12)
-        self.userId__Input_Label.setFont(font)
-        self.userId__Input_Label.setObjectName("userId__Input_Label")
 
-        self.userId__Value_Label = QtWidgets.QLabel(self.centralwidget)
-        self.userId__Value_Label.setGeometry(QtCore.QRect(120,10 , 100, 30))
-        font = QtGui.QFont()
-        font.setPointSize(12)
-        self.userId__Value_Label.setFont(font)
-        self.userId__Value_Label.setObjectName("userId__Value_Label")
-
-        self.sessionId__Input_Label = QtWidgets.QLabel(self.centralwidget)
-        self.sessionId__Input_Label.setGeometry(QtCore.QRect(10, 40, 100, 30))
-        font = QtGui.QFont()
-        font.setPointSize(12)
-        self.sessionId__Input_Label.setFont(font)
-        self.sessionId__Input_Label.setObjectName("sessionId__Input_Label")
-
-        self.sessionId__Value_Label = QtWidgets.QLabel(self.centralwidget)
-        self.sessionId__Value_Label.setGeometry(QtCore.QRect(120, 40, 100, 30))
-        font = QtGui.QFont()
-        font.setPointSize(12)
-        self.sessionId__Value_Label.setFont(font)
-        self.sessionId__Value_Label.setObjectName("sessionId__Value_Label")
-
-        self.radio__Value_Label = QtWidgets.QLabel(self.centralwidget)
-        self.radio__Value_Label.setGeometry(QtCore.QRect(10, 70, 100, 30))
-        font = QtGui.QFont()
-        font.setPointSize(12)
-        self.radio__Value_Label.setFont(font)
-        self.radio__Value_Label.setObjectName("sessionId__Value_Label")'''
-        
         TwoBackButton.setCentralWidget(self.centralwidget)
         self.statusbar = QtWidgets.QStatusBar(TwoBackButton)
         self.statusbar.setObjectName("statusbar")
@@ -178,10 +143,7 @@ class Ui_IndexWindow(object):
         self.VRGameButton.setText(_translate("TwoBackButton", "VR Game"))
         self.TreadmillButton.setText(_translate("TwoBackButton", "Treadmill"))
         self.LogOutButton.setText(_translate("TwoBackButton", "Log Out"))
-        # self.userId__Input_Label.setText(_translate("TwoBackButton", "User ID#"))
-        # self.sessionId__Input_Label.setText(_translate("TwoBackButton", "Session ID"))
-        
-    
+
     def gaitWindowFunction(self):
         self.w = QtWidgets.QMainWindow()
         self.ui = Ui_gaitUI() 
@@ -191,7 +153,8 @@ class Ui_IndexWindow(object):
 
     def treadmillWindowFunction(self):
         self.w = QtWidgets.QMainWindow()
-        self.ui = Ui_treadmillUI()
+        self.ui = Ui_treadmillUI(self.userId,self.sessionId,self.sessionTime)
+        self.ui.PATH = self.checkDir('Treadmill')
         self.ui.setupUi(self.w)
         self.ui.statusbar.showMessage(f"User ID:{self.userId}\t\t\t\t\t Session ID:{self.sessionId}\t\t\t\t\t Time:{self.sessionTime}")
         self.w.show()
@@ -206,10 +169,19 @@ class Ui_IndexWindow(object):
 
     def VRGameWindowFunction(self):
         self.w = QtWidgets.QMainWindow()
-        self.ui = Ui_VRGameWindow()
+        self.ui = Ui_VRGameWindow(self.userId,self.sessionId,self.sessionTime)
+        self.ui.PATH = self.checkDir('VRGame')
         self.ui.setupUi(self.w)
         self.ui.statusbar.showMessage(f"User ID:{self.userId}\t\t\t\t\t Session ID:{self.sessionId}\t\t\t\t\t Time:{self.sessionTime}")
         self.w.show()
+
+    def checkDir(self,taskName):
+        path = f"{config.PATH}/{str(self.userId)}/{str(self.sessionId)}/{str(self.sessionTime)}/{taskName}"
+        exists = os.path.exists(path)
+        if not exists:
+            os.makedirs(path)
+        
+        return path
 
     def end_test(self):
         widget.resize(400,500)
@@ -226,5 +198,4 @@ if __name__ == "__main__":
     widget.addWidget(MainWindow)
     widget.resize(400,500)
     widget.show()
-    # MainWindow.show()
     sys.exit(app.exec_())

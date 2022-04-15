@@ -2,6 +2,11 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 
 class Ui_2BackGameWindow(object):
+    def __init__(self,userId,sessionId,sessionTime):
+        self.userId = userId
+        self.sessionId = sessionId
+        self.sessionTime = sessionTime
+        
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(800, 600)
