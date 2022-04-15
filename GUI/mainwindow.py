@@ -4,6 +4,8 @@ from gaitWindow import Ui_gaitUI
 from treadmillWindow import Ui_treadmillUI
 from twoBackGameWindow import Ui_2BackGameWindow
 from VRGameWindow import Ui_VRGameWindow
+import config
+
 import os
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -152,9 +154,7 @@ class Ui_IndexWindow(object):
     def treadmillWindowFunction(self):
         self.w = QtWidgets.QMainWindow()
         self.ui = Ui_treadmillUI(self.userId,self.sessionId,self.sessionTime)
-        exists = os.path.exists(self.ui.PATH)
-        if not exists:
-            os.makedirs(self.ui.PATH)
+        self.ui.PATH = self.checkDir('Treadmill')
         self.ui.setupUi(self.w)
         self.ui.statusbar.showMessage(f"User ID:{self.userId}\t\t\t\t\t Session ID:{self.sessionId}\t\t\t\t\t Time:{self.sessionTime}")
         self.w.show()
@@ -169,10 +169,19 @@ class Ui_IndexWindow(object):
 
     def VRGameWindowFunction(self):
         self.w = QtWidgets.QMainWindow()
-        self.ui = Ui_VRGameWindow()
+        self.ui = Ui_VRGameWindow(self.userId,self.sessionId,self.sessionTime)
+        self.ui.PATH = self.checkDir('VRGame')
         self.ui.setupUi(self.w)
         self.ui.statusbar.showMessage(f"User ID:{self.userId}\t\t\t\t\t Session ID:{self.sessionId}\t\t\t\t\t Time:{self.sessionTime}")
         self.w.show()
+
+    def checkDir(self,taskName):
+        path = f"{config.PATH}/{str(self.userId)}/{str(self.sessionId)}/{str(self.sessionTime)}/{taskName}"
+        exists = os.path.exists(path)
+        if not exists:
+            os.makedirs(path)
+        
+        return path
 
     def end_test(self):
         widget.resize(400,500)

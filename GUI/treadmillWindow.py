@@ -12,7 +12,7 @@ class Ui_treadmillUI(object):
         self.userId = userId
         self.sessionId = sessionId
         self.sessionTime = sessionTime
-        self.PATH = f"{config.PATH}/{str(userId)}/{str(sessionId)}/{str(sessionTime)}/Treadmill"
+        self.PATH = None
         
     
     def setupUi(self, treadmillUi):
