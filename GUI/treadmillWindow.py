@@ -2,15 +2,19 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import *
 import cv2
 import os
+
+import config
+from sensor import SensorsHandler
+
+
 class Ui_treadmillUI(object):
     def __init__(self,userId,sessionId,sessionTime):
         self.userId = userId
         self.sessionId = sessionId
         self.sessionTime = sessionTime
-        # self.pathString = f"/{str(userId)}/{str(sessionId)}/{str(sessionTime)}" 
-        # self.PATH = 
-        # self.RGBPATH = os.path.join(self.PATH,'/treadmill/RGB')
-
+        self.PATH = f"{config.PATH}/{str(userId)}/{str(sessionId)}/{str(sessionTime)}/Treadmill"
+        
+    
     def setupUi(self, treadmillUi):
         self.centralwidget = QtWidgets.QWidget(treadmillUi)
         treadmillUi.setObjectName("treadmillUi")
@@ -65,9 +69,12 @@ class Ui_treadmillUI(object):
 
     def connect2Cam(self):
         self.connect_btn.setEnabled(False)
-        self.Worker1 = cameraThread()
+        self.Worker1 = cameraThread(self.PATH)
         self.Worker1.start()
+        
         self.Worker1.ImageUpdate.connect(self.ImageUpdateSlot)
+        self.sesnsor = SensorsHandler(self.PATH,self.userId,self.sessionId)
+        self.sesnsor.start()
 
     def record(self):
         
@@ -77,6 +84,7 @@ class Ui_treadmillUI(object):
 
         self.record_btn.setStyleSheet("background-color:green")
         self.Worker1.record = True
+        self.sesnsor.start_recording()
  
 
     def stopRecording(self):
@@ -87,19 +95,24 @@ class Ui_treadmillUI(object):
 
         self.record_btn.setStyleSheet("background-color:light gray")
         self.Worker1.stop()
+        self.sesnsor.close_sensor()
 
     def reset(self):
         pass
 
 class cameraThread(QtCore.QThread):
     ImageUpdate = QtCore.pyqtSignal(QImage)
+
+    def __init__(self,PATH,parent=None):
+        QtCore.QThread.__init__(self,parent)
+        self.PATH = PATH
     
-    def run(self):
+    def run(self):    
         self.ThreadActive = True
         self.Capture = cv2.VideoCapture(0)
         self.record = False
         fourcc = cv2.VideoWriter_fourcc('m','p','4','v')
-        videoWriter = cv2.VideoWriter('output.mp4', fourcc, 60.0, (int(self.Capture.get(3)),int(self.Capture.get(4))))
+        videoWriter = cv2.VideoWriter(os.path.join(self.PATH,'fCamFeed.mp4'), fourcc, 30.0, (int(self.Capture.get(3)),int(self.Capture.get(4))))
         
         while self.ThreadActive:
             ret, frame = self.Capture.read()
@@ -111,7 +124,6 @@ class cameraThread(QtCore.QThread):
                 ConvertToQtFormat = QImage(FlippedImage.data, FlippedImage.shape[1], FlippedImage.shape[0], QImage.Format_RGB888)
                 Pic = ConvertToQtFormat.scaled(640, 480, QtCore.Qt.KeepAspectRatio)
                 self.ImageUpdate.emit(Pic)
-        
         self.Capture.release()
         videoWriter.release()
         

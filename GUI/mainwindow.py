@@ -152,10 +152,9 @@ class Ui_IndexWindow(object):
     def treadmillWindowFunction(self):
         self.w = QtWidgets.QMainWindow()
         self.ui = Ui_treadmillUI(self.userId,self.sessionId,self.sessionTime)
-        # exists = os.path.exists(self.ui.RGBPATH)
-        # print(self.ui.RGBPATH)
-        # if not exists:
-        #     os.makedirs(self.ui.RGBPATH)
+        exists = os.path.exists(self.ui.PATH)
+        if not exists:
+            os.makedirs(self.ui.PATH)
         self.ui.setupUi(self.w)
         self.ui.statusbar.showMessage(f"User ID:{self.userId}\t\t\t\t\t Session ID:{self.sessionId}\t\t\t\t\t Time:{self.sessionTime}")
         self.w.show()
