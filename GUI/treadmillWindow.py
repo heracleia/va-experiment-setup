@@ -2,10 +2,14 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import *
 import cv2
 import os
+import threading
+from signal import signal, SIGPIPE, SIG_DFL
 
 import config
 from sensor import SensorsHandler
-
+import sys
+sys.path.insert(0,'/home/heracleia/Desktop/va-experiment-setup/')
+from muse import MuseDataCollection
 
 class Ui_treadmillUI(object):
     def __init__(self,userId,sessionId,sessionTime):
@@ -64,7 +68,7 @@ class Ui_treadmillUI(object):
         self.stop_btn.setText(_translate("treadmillUi", "Stop Recording"))
         self.reset_btn.setText(_translate("treadmillUi", "Reset"))
 
-    def ImageUpdateSlot(self,Image):
+    def treadmillCamUpdateSlot(self,Image):
         self.cam_view.setPixmap(QPixmap.fromImage(Image))
 
     def connect2Cam(self):
@@ -72,9 +76,10 @@ class Ui_treadmillUI(object):
         self.Worker1 = cameraThread(self.PATH)
         self.Worker1.start()
         
-        self.Worker1.ImageUpdate.connect(self.ImageUpdateSlot)
-        self.sesnsor = SensorsHandler(self.PATH,self.userId,self.sessionId)
-        self.sesnsor.start()
+        self.Worker1.treadMillCam.connect(self.treadmillCamUpdateSlot)
+        self.sensor = SensorsHandler(self.PATH,self.userId,self.sessionId)
+        self.muse = MuseDataCollection.MuseDataCollection(self.PATH)
+        self.sensor.start()
 
     def record(self):
         
@@ -84,9 +89,17 @@ class Ui_treadmillUI(object):
 
         self.record_btn.setStyleSheet("background-color:green")
         self.Worker1.record = True
-        self.sesnsor.start_recording()
- 
+        self.sensor.start_recording()
 
+        
+
+        self.raw_data_thread = threading.Thread(target=self.muse.recordData,args=())
+        self.neuro_data_thread = threading.Thread(target=self.muse.collectNeuroData,args=())
+        signal(SIGPIPE, SIG_DFL)
+        self.raw_data_thread.start()
+        self.neuro_data_thread.start()
+        # self.muse.collectNeuroData()
+        
     def stopRecording(self):
         
         self.record_btn.setEnabled(True)
@@ -94,14 +107,15 @@ class Ui_treadmillUI(object):
         self.connect_btn.setEnabled(True)
 
         self.record_btn.setStyleSheet("background-color:light gray")
-        self.Worker1.stop()
-        self.sesnsor.close_sensor()
+        self.Worker1.record = False
+        self.sensor.close_sensor()
+        self.sensor.join()
 
     def reset(self):
-        pass
+        self.Worker1.stop()
 
 class cameraThread(QtCore.QThread):
-    ImageUpdate = QtCore.pyqtSignal(QImage)
+    treadMillCam = QtCore.pyqtSignal(QImage)
 
     def __init__(self,PATH,parent=None):
         QtCore.QThread.__init__(self,parent)
@@ -109,7 +123,7 @@ class cameraThread(QtCore.QThread):
     
     def run(self):    
         self.ThreadActive = True
-        self.Capture = cv2.VideoCapture(0)
+        self.Capture = cv2.VideoCapture(1)
         self.record = False
         fourcc = cv2.VideoWriter_fourcc('m','p','4','v')
         videoWriter = cv2.VideoWriter(os.path.join(self.PATH,'fCamFeed.mp4'), fourcc, 30.0, (int(self.Capture.get(3)),int(self.Capture.get(4))))
@@ -123,7 +137,7 @@ class cameraThread(QtCore.QThread):
                 FlippedImage = cv2.flip(Image, 1)
                 ConvertToQtFormat = QImage(FlippedImage.data, FlippedImage.shape[1], FlippedImage.shape[0], QImage.Format_RGB888)
                 Pic = ConvertToQtFormat.scaled(640, 480, QtCore.Qt.KeepAspectRatio)
-                self.ImageUpdate.emit(Pic)
+                self.treadMillCam.emit(Pic)
         self.Capture.release()
         videoWriter.release()
         

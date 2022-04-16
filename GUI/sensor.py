@@ -1,3 +1,4 @@
+
 import platform
 import sys
 
@@ -235,7 +236,7 @@ class SensorsHandler(threading.Thread):
 
 if __name__ == '__main__':
 
-    path = r"/home/heracleia/Desktop/va-experiment-setup-GUI/GUI"
+    path = r"C:\Sensor"
 
     User_ID = 6
     Block_Id = 2

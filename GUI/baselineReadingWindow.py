@@ -1,5 +1,10 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from sensor import SensorsHandler
+import sys
+sys.path.insert(0,'/home/heracleia/Desktop/va-experiment-setup/')
+from muse import MuseDataCollection
+import threading
+from signal import signal, SIGPIPE, SIG_DFL
 
 
 class Ui_BaselineReadingWindow(object):
@@ -63,10 +68,16 @@ class Ui_BaselineReadingWindow(object):
 
     def connectFunction(self):
         self.sensor = SensorsHandler(self.PATH,self.userId,self.sessionId)
+        self.muse = MuseDataCollection.MuseDataCollection(self.PATH)
         self.sensor.start()
 
     def recordFunction(self):
         self.sensor.start_recording()
+        self.raw_data_thread = threading.Thread(target=self.muse.recordData,args=())
+        self.neuro_data_thread = threading.Thread(target=self.muse.collectNeuroData,args=())
+        signal(SIGPIPE, SIG_DFL)
+        self.raw_data_thread.start()
+        self.neuro_data_thread.start()
 
     def stopFunction(self):
         self.sensor.close_sensor()
@@ -76,7 +87,7 @@ if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
-    ui = Ui_MainWindow()
+    ui = Ui_BaselineReadingWindow()
     ui.setupUi(MainWindow)
     MainWindow.show()
     sys.exit(app.exec_())

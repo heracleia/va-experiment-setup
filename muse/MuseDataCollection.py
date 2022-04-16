@@ -3,39 +3,26 @@ from subprocess import Popen, PIPE
 import subprocess
 from muselsl import stream, list_muses
 import time
-from muselsl import record
+from muse.record import record
 import os
 import csv
 import bleak, asyncio
 import numpy as np  # Module that simplifies computations on matrices
 from pylsl import StreamInlet, resolve_byprop  # Module to receive EEG data
-import utils  # Our own utility functions
+# import utils  # Our own utility functions
 import asyncio
 from signal import signal, SIGPIPE, SIG_DFL
+from muse import utils
 
 
 addr = '00:55:DA:BB:1E:CC'
 
 class MuseDataCollection():
-    def connect(self):
-        print('Starting BlueMuse.')
-        # subprocess.call('start bluemuse:', shell=True)
-        subprocess.call('start bluemuse://start?streamfirst=true', shell=True)
-        time.sleep(30)
-        # subprocess.call('muselsl stream')
-
-    def record(self):
-        muses = stream.list_muses()
-        stream.stream(muses[0]['address'])
-
-        # Note: Streaming is synchronous, so code here will not execute until after the stream has been closed
-        print('Stream has ended')
-        subprocess.call('muselsl record --duration 60', shell=True)
-
-    def stopConnection(self):
-        subprocess.call('start bluemuse://shutdown', shell=True)
-
+    def __init__(self,path):
+        self.PATH = path
+    
     def collectNeuroData(self):
+        print(self.PATH)
         """ 1. CONNECT TO EEG STREAM """
         Delta = 0
         Theta = 1
@@ -103,7 +90,7 @@ class MuseDataCollection():
         #print('Press Ctrl-C in the console to break the while loop.')
         timestamp = time.strftime("%Y%m%d-%H%M%S")
         FILE_NAME = ("neuroFeedback_data-" + timestamp + ".csv")
-        f = open(FILE_NAME, 'w')
+        f = open(os.path.join(self.PATH,FILE_NAME), 'w')
 
         # create the csv writer
         writer = csv.writer(f)
@@ -111,7 +98,7 @@ class MuseDataCollection():
         writer.writerow(header)
 
         try:
-            signal(SIGPIPE, SIG_DFL)
+            # signal(SIGPIPE, SIG_DFL)
             # The following loop acquires data, computes band powers, and calculates neurofeedback metrics based on those band powers
             duration = 60
             t_end = time.time() + duration
@@ -167,21 +154,23 @@ class MuseDataCollection():
 
     def recordData(self):
         # without this, already connected device won't connect
-        if 1: subprocess.call(['bluetoothctl', 'disconnect', addr])
+        # if 1: subprocess.call(['bluetoothctl', 'disconnect', addr])
 
-        async def awrap():
-            async with bleak.BleakClient(addr) as cl:
-                print('Connection established')
+        # async def awrap():
+        #     async with bleak.BleakClient(addr) as cl:
+        #         print('Connection established')
 
-        asyncio.run(awrap())
-        muses = list_muses()
-        print("Available Muses:", muses)
-        p = os.popen('muselsl stream')
+        # asyncio.run(awrap())
+        # muses = list_muses()
+        # print("Available Muses:", muses)
+        p = os.popen('muselsl stream --address 00:55:DA:BB:1E:CC')
         time.sleep(15)
         duration = 60
+        record(duration,self.PATH,'raw_data.csv')
+        # os.popen('muselsl record --duration 60')
 
-test = MuseDataCollection()
-test.recordData()
-test.collectNeuroData()
+# test = MuseDataCollection()
+# test.recordData()
+# test.collectNeuroData()
 
 #test.recordData()

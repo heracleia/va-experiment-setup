@@ -1,5 +1,10 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 import cv2
+import sys
+import os
+sys.path.insert(0,'/home/heracleia/Desktop/va-experiment-setup/')
+
+from DepthCameraUtils import DepthCamera
 
 
 
@@ -8,6 +13,7 @@ class Ui_gaitUI(object):
         self.userId = userId
         self.sessionId = sessionId
         self.sessionTime = sessionTime
+        self.PATH = None
         
     def setupUi(self, gaitUI):
         gaitUI.setObjectName("gaitUI")
@@ -88,36 +94,51 @@ class Ui_gaitUI(object):
         
 
     def connect2Cam(self):
-        self.frontCam = frontCamThread()
-        self.sideCam = sideCamThread()
+        self.frontCam = frontCamThread(self.PATH)
+        self.sideCam = DepthCamera.DepthCamThread(self.PATH)
+        
 
         self.frontCam.start()
         self.sideCam.start()
 
         self.frontCam.fCam.connect(self.frontCamUpdateSlot)
         self.sideCam.sCam.connect(self.sideCamUpdateSlot)
+        
+        
 
     def record(self):
-        print("Record Function")
-        pass
+        self.frontCam.record = True
+        self.sideCam.recording = True
 
     def stop(self):
-        print("Stop")
-        pass
-
+        self.sideCam.recording = False
+        self.frontCam.record = False
+    
     def reset(self):
-        pass
+        self.sideCam.stop_rgb_depth_video()
+        self.frontCam.stop()
 
 class frontCamThread(QtCore.QThread):
     fCam = QtCore.pyqtSignal(QtGui.QImage)
     
+    def __init__(self,PATH,parent=None):
+        QtCore.QThread.__init__(self,parent)
+        self.PATH = PATH
+
     def run(self):
         self.ThreadActive = True
-        Capture = cv2.VideoCapture(0)
+        self.Capture = cv2.VideoCapture(1)
+        self.record = False
+        
+        fourcc = cv2.VideoWriter_fourcc('m','p','4','v')
+        videoWriter = cv2.VideoWriter(os.path.join(self.PATH,'fCamFeed.mp4'), fourcc, 30.0, (int(self.Capture.get(3)),int(self.Capture.get(4))))
+
         while self.ThreadActive:
-            ret, frame = Capture.read()
+            ret, frame = self.Capture.read()
             if ret:
                 Image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                if self.record:
+                    videoWriter.write(frame)
                 FlippedImage = cv2.flip(Image, 1)
                 ConvertToQtFormat = QtGui.QImage(FlippedImage.data, FlippedImage.shape[1], FlippedImage.shape[0], QtGui.QImage.Format_RGB888)
                 Pic = ConvertToQtFormat.scaled(640, 480, QtCore.Qt.KeepAspectRatio)
@@ -125,7 +146,6 @@ class frontCamThread(QtCore.QThread):
     
     def stop(self):
         self.ThreadActive = False
-        self.quit()
 
 class sideCamThread(QtCore.QThread):
     sCam = QtCore.pyqtSignal(QtGui.QImage)

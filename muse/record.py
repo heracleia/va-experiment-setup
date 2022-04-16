@@ -16,6 +16,7 @@ from .constants import LSL_SCAN_TIMEOUT, LSL_EEG_CHUNK, LSL_PPG_CHUNK, LSL_ACC_C
 
 def record(
     duration: int,
+    path=None,
     filename=None,
     dejitter=False,
     data_source="EEG",
@@ -28,9 +29,8 @@ def record(
         chunk_length = LSL_ACC_CHUNK
     if data_source == "GYRO":
         chunk_length = LSL_GYRO_CHUNK
-
     if not filename:
-        filename = os.path.join(os.getcwd(), "%s_recording_%s.csv" %
+        filename = os.path.join(path, "%s_recording_%s.csv" %
                                 (data_source,
                                  strftime('%Y-%m-%d-%H.%M.%S', gmtime())))
 
@@ -91,6 +91,7 @@ def record(
             # Save every 5s
             if continuous and (last_written_timestamp is None or last_written_timestamp + 5 < timestamps[-1]):
                 _save(
+                    path,
                     filename,
                     res,
                     timestamps,
@@ -110,6 +111,7 @@ def record(
     print("Time correction: ", time_correction)
 
     _save(
+        path,
         filename,
         res,
         timestamps,
@@ -124,6 +126,7 @@ def record(
 
 
 def _save(
+    path,
     filename: Union[str, Path],
     res: list,
     timestamps: list,
@@ -147,9 +150,9 @@ def _save(
     res = np.c_[timestamps, res]
     data = pd.DataFrame(data=res, columns=["timestamps"] + ch_names)
 
-    directory = os.path.dirname(filename)
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+    # directory = os.path.dirname(filename)
+    # if not os.path.exists(directory):
+    #     os.makedirs(directory)
 
     if inlet_marker and markers:
         n_markers = len(markers[0][0])
@@ -164,14 +167,14 @@ def _save(
 
     # If file doesn't exist, create with headers
     # If it does exist, just append new rows
-    if not Path(filename).exists():
+    if not Path(os.path.join(path,filename)).exists():
         # print("Saving whole file")
-        data.to_csv(filename, float_format='%.3f', index=False)
+        data.to_csv(os.path.join(path,filename), float_format='%.3f', index=False)
     else:
         # print("Appending file")
         # truncate already written timestamps
         data = data[data['timestamps'] > last_written_timestamp]
-        data.to_csv(filename, float_format='%.3f', index=False, mode='a', header=False)
+        data.to_csv(os.path.join(path,filename), float_format='%.3f', index=False, mode='a', header=False)
 
 
 
